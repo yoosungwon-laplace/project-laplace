@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>프로젝트 라플라스 — 아카이브</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;900&family=Major+Mono+Display&display=swap');
+
+:root {
+  --bg: #0a0c10;
+  --panel: #11151c;
+  --panel-2: #161b24;
+  --line: #232b38;
+  --txt: #c9d3e0;
+  --dim: #6b7787;
+  --accent: #6fe3c2;
+  --accent-dim: #2c5e54;
+  --warn: #e3a76f;
+  --char: #6fb8e3;
+  --dome: #e36f9c;
+  --sys: #b98fe3;
+  --lore: #d7e36f;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--txt);
+  font-family: 'Noto Serif KR', serif;
+  overscroll-behavior: none;
+}
+
+body {
+  background-image:
+    radial-gradient(circle at 20% 0%, rgba(111,227,194,0.06), transparent 40%),
+    radial-gradient(circle at 90% 90%, rgba(227,111,156,0.05), transparent 40%);
+  min-height: 100vh;
+}
+
+.grain::before {
+  content:""; position: fixed; inset:0; pointer-events:none; z-index:1;
+  background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.012) 0 1px, transparent 1px 3px);
+  opacity:.5;
+}
+
+header {
+  position: sticky; top: 0; z-index: 20;
+  background: rgba(10,12,16,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+  padding: 14px 16px 10px;
+}
+.brand {
+  font-family: 'Major Mono Display', monospace;
+  font-size: 13px; letter-spacing: 2px; color: var(--accent);
+  display:flex; align-items:center; gap:8px;
+}
+.brand .dot { width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse 2s infinite;}
+@keyframes pulse { 50%{opacity:.3;} }
+.title { font-weight:900; font-size:21px; margin:2px 0 0; letter-spacing:-0.5px; }
+.sub { color: var(--dim); font-size:11px; margin-top:2px; font-family:'Major Mono Display',monospace; }
+
+.search-wrap { margin-top:12px; position:relative; }
+#search {
+  width:100%; padding:11px 14px 11px 38px;
+  background: var(--panel-2); border:1px solid var(--line); border-radius:10px;
+  color: var(--txt); font-family:'Noto Serif KR',serif; font-size:15px;
+  outline:none; transition:.2s;
+}
+#search:focus { border-color: var(--accent-dim); box-shadow:0 0 0 3px rgba(111,227,194,0.08); }
+.search-wrap svg { position:absolute; left:12px; top:50%; transform:translateY(-50%); stroke:var(--dim); }
+
+.filters { display:flex; gap:7px; margin-top:10px; flex-wrap:wrap; }
+.chip {
+  font-size:12px; padding:6px 12px; border-radius:20px; cursor:pointer;
+  border:1px solid var(--line); background:transparent; color:var(--dim);
+  font-family:'Noto Serif KR',serif; transition:.18s; white-space:nowrap;
+}
+.chip.active { color:var(--bg); font-weight:600; }
+.chip[data-cat="all"].active{ background:var(--accent); border-color:var(--accent); }
+.chip.manage-chip { color:var(--accent); border-style:dashed; }
+
+.tabbar { display:flex; gap:4px; margin-top:11px; }
+.tab {
+  flex:1; text-align:center; padding:8px; font-size:13px; cursor:pointer;
+  border-radius:8px 8px 0 0; color:var(--dim); border:1px solid transparent;
+  font-family:'Major Mono Display',monospace; letter-spacing:1px;
+}
+.tab.active { color:var(--accent); border-color:var(--line); border-bottom-color:transparent; background:var(--panel); }
+
+main { padding:16px; position:relative; z-index:2; padding-bottom:90px; }
+
+.grid { display:grid; grid-template-columns:1fr; gap:11px; }
+.card {
+  background: var(--panel); border:1px solid var(--line); border-radius:12px;
+  padding:14px 15px; cursor:pointer; transition:.18s; position:relative; overflow:hidden;
+}
+.card:active { transform:scale(0.985); }
+.card::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--cat-color,#6fe3c2); }
+.card-top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+.card-name { font-weight:600; font-size:17px; }
+.card-tag {
+  font-size:10px; font-family:'Major Mono Display',monospace; padding:3px 7px;
+  border-radius:5px; letter-spacing:.5px; white-space:nowrap; opacity:.9;
+}
+.card-meta { color:var(--dim); font-size:12px; margin-top:3px; font-family:'Major Mono Display',monospace;}
+.card-desc { color:var(--txt); font-size:13.5px; margin-top:8px; line-height:1.55; opacity:.82;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+
+.empty { text-align:center; color:var(--dim); padding:60px 20px; font-size:14px; }
+.empty .big { font-family:'Major Mono Display',monospace; font-size:40px; color:var(--line); }
+
+/* FAB */
+.fab {
+  position:fixed; right:18px; bottom:24px; z-index:30;
+  width:56px; height:56px; border-radius:50%; border:none;
+  background:var(--accent); color:var(--bg); font-size:28px; font-weight:300;
+  box-shadow:0 6px 24px rgba(111,227,194,0.35); cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:.2s;
+}
+.fab:active { transform:scale(0.9); }
+
+/* data tools button */
+.tools-fab {
+  position:fixed; left:18px; bottom:24px; z-index:30;
+  height:46px; padding:0 16px; border-radius:23px; border:1px solid var(--line);
+  background:var(--panel); color:var(--accent); font-size:13px; cursor:pointer;
+  display:flex; align-items:center; gap:6px; font-family:'Major Mono Display',monospace;
+  box-shadow:0 4px 16px rgba(0,0,0,0.4);
+}
+.tools-fab:active { transform:scale(0.94); }
+
+/* Modal */
+.overlay {
+  position:fixed; inset:0; z-index:40; background:rgba(5,7,10,0.7);
+  backdrop-filter:blur(4px); display:none; align-items:flex-end;
+}
+.overlay.show { display:flex; animation:fade .2s; }
+@keyframes fade { from{opacity:0;} }
+.sheet {
+  width:100%; max-height:92vh; background:var(--panel);
+  border-radius:18px 18px 0 0; border-top:1px solid var(--line);
+  display:flex; flex-direction:column; animation:slideup .28s cubic-bezier(.2,.9,.3,1);
+}
+@keyframes slideup { from{transform:translateY(100%);} }
+.sheet-handle { width:38px; height:4px; background:var(--line); border-radius:3px; margin:10px auto 4px; flex:none; }
+.sheet-body { overflow-y:auto; padding:6px 18px 24px; -webkit-overflow-scrolling:touch; }
+.sheet-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:12px; }
+.sheet-name { font-weight:900; font-size:24px; letter-spacing:-0.5px; }
+.sheet-meta { color:var(--dim); font-size:13px; font-family:'Major Mono Display',monospace; margin-top:4px;}
+.detail-field { margin-bottom:16px; }
+.detail-label { font-family:'Major Mono Display',monospace; font-size:10px; letter-spacing:1px; color:var(--accent); margin-bottom:5px; text-transform:uppercase;}
+.detail-val { font-size:15px; line-height:1.7; white-space:pre-wrap; }
+.rel-list { display:flex; flex-wrap:wrap; gap:7px; }
+.rel-pill { font-size:12.5px; padding:5px 11px; border-radius:8px; background:var(--panel-2); border:1px solid var(--line); cursor:pointer; }
+.rel-pill:active{ border-color:var(--accent-dim);}
+
+.btn-row { display:flex; gap:9px; margin-top:8px; }
+.btn { flex:1; padding:11px; border-radius:10px; font-size:14px; cursor:pointer; font-family:'Noto Serif KR',serif; border:1px solid var(--line); background:var(--panel-2); color:var(--txt); }
+.btn-primary { background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:600; }
+.btn-danger { color:var(--dome); border-color:rgba(227,111,156,.4); }
+.icon-btn { background:transparent; border:none; color:var(--dim); cursor:pointer; padding:4px; font-size:20px; }
+
+/* Form */
+.field { margin-bottom:13px; }
+.field label { display:block; font-size:11px; color:var(--dim); margin-bottom:5px; font-family:'Major Mono Display',monospace; letter-spacing:.5px;}
+.field input, .field textarea, .field select {
+  width:100%; padding:10px 12px; background:var(--panel-2); border:1px solid var(--line);
+  border-radius:9px; color:var(--txt); font-family:'Noto Serif KR',serif; font-size:15px; outline:none;
+}
+.field textarea { resize:vertical; min-height:80px; line-height:1.6; }
+.field input:focus, .field textarea:focus, .field select:focus { border-color:var(--accent-dim); }
+
+.toast {
+  position:fixed; left:50%; bottom:90px; transform:translateX(-50%) translateY(20px);
+  background:var(--panel-2); border:1px solid var(--accent-dim); color:var(--accent);
+  padding:11px 20px; border-radius:24px; font-size:13px; z-index:60; opacity:0;
+  transition:.3s; pointer-events:none; box-shadow:0 6px 24px rgba(0,0,0,0.5); max-width:80vw; text-align:center;
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* Graph */
+#graphWrap { display:none; }
+#graphWrap.show { display:block; }
+#gridWrap.hide { display:none; }
+svg#graph { width:100%; height:auto; touch-action:none; }
+.node-label { font-family:'Noto Serif KR',serif; font-size:11px; fill:var(--txt); }
+.graph-hint { color:var(--dim); font-size:12px; text-align:center; margin-bottom:10px; }
+
+.info-box { background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:13px; font-size:13px; line-height:1.6; color:var(--dim); margin-bottom:14px; }
+.info-box b { color:var(--accent); }
+input[type=file] { display:none; }
+</style>
+</head>
+<body class="grain">
+<header>
+  <div class="brand"><span class="dot"></span>PROJECT LAPLACE // ARCHIVE</div>
+  <div class="title">프로젝트 라플라스</div>
+  <div class="sub">collective surveillance archive · eden</div>
+  <div class="search-wrap">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+    <input id="search" placeholder="검색… (이름, 키워드)" autocomplete="off">
+  </div>
+  <div class="filters" id="filters"></div>
+  <div class="tabbar">
+    <div class="tab active" data-view="grid">목록</div>
+    <div class="tab" data-view="graph">관계도</div>
+  </div>
+</header>
+
+<main>
+  <div id="gridWrap"><div class="grid" id="grid"></div></div>
+  <div id="graphWrap">
+    <div class="graph-hint">인물 노드를 탭하면 상세가 열립니다 · 선은 관계를 뜻해요</div>
+    <svg id="graph" viewBox="0 0 360 360"></svg>
+  </div>
+</main>
+
+<button class="tools-fab" id="toolsBtn">⇅ 데이터</button>
+<button class="fab" id="addBtn">+</button>
+<input type="file" id="importFile" accept=".json,application/json">
+<div class="toast" id="toast"></div>
+
+<!-- Detail / Edit overlay -->
+<div class="overlay" id="overlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </div>
+</div>
+
+<script>
+const STORE_KEY = 'laplace_archive_v2';
+const CAT_KEY = 'laplace_cats_v2';
+
+const DEFAULT_CATS = [
+  {name:'인물', color:'#6fb8e3'},
+  {name:'돔', color:'#e36f9c'},
+  {name:'시스템', color:'#b98fe3'},
+  {name:'설정', color:'#d7e36f'},
+  {name:'상징', color:'#6fe3c2'},
+  {name:'사건', color:'#e3a76f'},
+];
+const PALETTE = ['#6fb8e3','#e36f9c','#b98fe3','#d7e36f','#6fe3c2','#e3a76f','#e36f6f','#8fe39c','#e3d76f','#9c8fe3','#6fe3e0','#e38fce'];
+
+const SEED = [
+  // ===== 인물 =====
+  {id:'shaul', cat:'인물', name:'샤울', meta:'주인공 · 잔향 기록사', desc:'은발의 냉미녀. 165cm/41kg, 고양이상에 파란 눈. 차가운 겉모습 아래 따뜻함을 품고 있다. (성별 전환 검토 중)',
+   fields:{
+     성별:'여성 (성별 전환 검토 중 — 남성화 시 달레트와 역할 교체 가능성)',
+     신체:'165cm, 41kg. 뼈대가 가는 마른 체형. 쇄골과 어깨뼈 라인이 또렷. 팔다리가 길고 가늘지만 약해 보이지 않음. 손목이 얇고 손가락이 길다.',
+     얼굴:'고양이상. 눈꼬리가 살짝 올라간 길쭉한 눈. 눈동자는 파란색 — 창백한 피부와 은발 사이에서 유일하게 선명한 색. 코는 높고 날렵, 턱 라인이 가늘고 깔끔. 입술 얇고 평소 일자로 다묾. 웃을 때 입꼬리만 살짝 올라감.',
+     머리카락:'은발(실버) 단발. 귀 아래~턱선 길이. 앞머리 없이 옆으로 넘김. 펠트가 준 별 모양 머리핀을 꽂고 다님.',
+     성격:'냉미녀. 말수 적고 표정 거의 없음. 동작에 군더더기 없어 고양이처럼 조용하고 정확. 마음은 따뜻하다. 걱정을 말이 아닌 행동으로 표현. 관심 범위는 좁지만 챙기기로 한 사람은 끝까지 챙김. "길고양이한테 밥 놔두고 모른 척 가는 유형."',
+     역할:'에덴의 야간 큐레이터/잔향 기록사. 공용 역사(사건 기록)만 남기고 감정적 잔향(허밍)은 폐기하는 업무. 폐기 라인 앞이라 카트리지를 빼돌리기 좋은 위치.',
+     정체성:'미확정 — 혁명가 핏줄 vs 알파의 DNA 후손. 후손일 경우 마더트리와 반발이 적은 체질이라 잠재적 부품(위험).',
+     특이사항:'불협화성이 있어 마더트리 동기화 비용이 커서 우선순위에서 밀림. 그 덕에 자의식의 잔영 유지. 수면 4시간.'
+   }, rels:['daleth','felt','alpha']},
+
+  {id:'daleth', cat:'인물', name:'달레트', meta:'공동 주인공 · 세뇌 면역자', desc:'혁명가 핏줄로 세뇌에 면역. 익살스럽고 책을 좋아하는 강아지 같은 인물. 샤울과 동거 중. (성별 전환 검토 중)',
+   fields:{
+     성별:'남성 (성별 전환 검토 중)',
+     성격:'익살스럽고 유머러스. 진지한 상황에서도 유머를 잃지 않으려 함. 그러나 가끔 갑자기 깊어지는 순간이 있다 — 두 개의 주파수 사이를 오가는 것처럼.',
+     일상:'샤울과 동거. 샤울 출근 동안 집에서 책 읽고 뒹굴뒹굴. "책을 읽을 수 있는 개"가 자화상. 수면 10시간(낮잠 포함). 요리치(수프 태우고 핸드소프로 설거지).',
+     면역:'혁명가 핏줄이라 세뇌 트리거에 면역. 대신 밖에 나가면 모든 소리(합창·광고·리듬)가 너무 선명하게 들려 피곤함. 그래서 집에 머묾.',
+     통찰:'책을 많이 읽어 "밤/별/그림자/늑대" 등 치워진 진실을 어렴풋이 안다. "밤은 사라진 게 아니라 치워진 것이다." 허밍을 들으면 소리가 아닌 장면(기억)으로 받아들임 — "안에 사람이 있어."',
+     비극:'돔 밖에서 혁명군 DNA 거부 성질로 건강이 악화됨. 안에서도(세뇌) 밖에서도(DNA) 살기 힘든 존재.'
+   }, rels:['shaul','brainwash']},
+
+  {id:'alpha', cat:'인물', name:'알파 (α)', meta:'부인공 · 돔 관리자 · 500세+', desc:'아레스 출신 초고지능 돌연변이. 콜렉티브에 가까운 존재가 되어 감정이 희석됨. 어린 소녀 빙의체로 활동.',
+   fields:{
+     이름어원:'그리스 숫자 알파(1).',
+     정체:'폭력성 실험 돔 아레스에서 태어난 돌연변이. 허약한 몸, 극도로 높은 두뇌 효율 — 말 그대로 알파.',
+     배경:'무력·배신이 만연한 아레스에서 약한 신체로도 높은 점수 달성, 초기화 전까지 생존. 콜렉티브가 잠재력을 높이 평가해 에덴 관리자로 지정.',
+     현재상태:'불로불사에 가까운 시술로 500년+ 생존. 사실상 인간보다 콜렉티브에 가까운 존재가 됨. 거의 움직일 수 없는 컴퓨터에 가까운 상태.',
+     성격:'태생적으로 냉정·계산적. 보편적 인간의 따뜻함은 거의 없음. 델마에게만 따뜻했다. 현재는 인간성이 많이 희석됨.',
+     빙의체:'어린 여자아이 모습(펠트와 비슷한 또래). 눈에 띄게 깨끗하고 손질된 머리. 발걸음·움직임이 부자연스럽게 정박/등속도. 눈을 깜빡이지 않음. 일반인은 못 느끼고 면역자만 자세히 봐야 이상함 감지. 빙의 안 할 땐 눈에 안 띄는 곳에 완전 정지 상태로 숨음.',
+     기억상태:"세뇌로 과거·델마 기억이 희미함. '동생이 있었다', '동생을 구하려 이 일을 한다' 정도만 관성적으로 남음. 후에 주인공들과 대화하며 떠올리게 됨.",
+     샤울에대한반응:'감정적 흔들림·지적 동요·균열 일절 없음. 샤울의 무조건적 친절은 "목적 없는 친절을 베푸는 인간"이라는 예외 데이터로 수집될 뿐. 그 이상도 이하도 아님.',
+     뇌이식:'같은 혈통이라 마더트리와 반발이 없어, 자기 뇌 일부를 마더트리에 이식해 델마의 희생을 막으려 함.',
+     필라멘트:'달레트에게 인간 데이터 저장용 고용량 계량 필라멘트를 줌. 동기는 데이터 보존(비효율 방지). 결과적으로 달레트에게 마지막 선택지를 준 셈.'
+   }, rels:['delma','motherboard','collective','ares']},
+
+  {id:'delma', cat:'인물', name:'델마 (δ)', meta:'알파의 여동생', desc:'알파의 여동생. 마더트리(심해) 적합자로 흡수되었다.',
+   fields:{
+     이름어원:'그리스 숫자 델타(4). α(1)와 δ(4) 사이의 2,3이 비어있어 서사적 활용 여지(잃어버린 형제, 실험 넘버링 등).',
+     배경:'알파의 여동생. 폭력적인 돔 아레스에서 함께 생존. 마더트리 적합자로 선정됨.',
+     콜렉티브의거짓말:"'델마를 죽이지 않겠다' — 그러나 마더트리와 하나가 되어도 생물학적으론 살아있기에 거짓말이 아닌 셈. 콜렉티브에게 의식·자아는 변수일 뿐, 생물학적 생존만이 '살아있음'의 정의. 이 정의의 차이가 알파와 콜렉티브의 근본적 균열."
+   }, rels:['alpha','motherboard']},
+
+  {id:'felt', cat:'인물', name:'펠트', meta:'정보 도둑 소녀', desc:'당차고 개구쟁이인 도둑 소녀. 폐기 카트리지를 훔쳐 롬 영감에게 전달. 본인도 카트리지 하나를 간직 중. (리제로 펠트 모티프)',
+   fields:{
+     모티프:'리제로의 펠트. 당차고 개구쟁이.',
+     나이:'열다섯쯤(열셋 같기도 한 작은 체구).',
+     특징:'후드를 건성으로 씀, 눈이 반짝거림. 카트리지를 동전 돌리듯 손가락 사이에서 돌리는 능숙한 손놀림. 발소리가 거의 없는 고양이 같은 움직임. 칭찬에 익숙하지 않아 칭찬하면 쭈뼛거림.',
+     역할:'아카이브 폐기 카트리지를 훔쳐 롬 영감에게 전달. 본인도 카트리지 하나 간직 — 처음 들었을 때 이유 없이 울었던 것. "팔려고 훔치는 거 아니야. 이건 내 거야."',
+     샤울과:'폐기 작업 중 도둑질하다 마주침 → 샤울이 잡는 대신 밥을 먹임. 샤울을 "언니"라 부르며 따름.'
+   }, rels:['shaul','rom']},
+
+  {id:'rom', cat:'인물', name:'롬 영감', meta:'지하 암거래상 · 이전 주기 생존자', desc:'직전 실험에서 탈출한 생존자. 허밍 카트리지와 콜렉티브 기술 물건을 거래. 말수 적음.',
+   fields:{
+     모티프:'리제로의 롬 영감. 펠트의 뒤를 봐주는 존재.',
+     정체:'이번 실험의 인간이 아니라 직전 실험에서 탈출/생존한 존재. 리셋을 겪고도 살아남음.',
+     역할:'펠트가 훔친 카트리지를 받아 지하 데이터 시장에 유통. 돔에서 구하기 어려운 물건·콜렉티브 기술 물건도 취급하는 장사꾼.',
+     보유:'방 하나를 가득 채운 허밍 카트리지(사람들의 기쁨·슬픔 등 콜렉티브엔 정크지만 인간에겐 가치 있는 감정들). 콜렉티브 기술이 일부 들어간 재생기(허밍을 소리가 아닌 원래 형태로 재생).',
+     성격:'말수 적음. 큰 체구. 깊은 눈. 뭔가 알지만 쉽게 말하지 않음.'
+   }, rels:['felt','reset','mari']},
+
+  {id:'mari', cat:'인물', name:'마리', meta:'지하 의사 (무면허)', desc:'입 거칠고 직설적이지만 손은 따뜻한 지하 의사. 사람 읽는 눈이 날카롭다.',
+   fields:{
+     역할:'지하에서 활동하는 무면허 의사. 위/아래 양쪽에 환자가 있어 위로도 올라감.',
+     성격:'거칠고 직설적인 말투, 따뜻한 손. 사람을 한눈에 읽음(손의 정전기 자국으로 직업 파악, 자세로 면역자 식별 등).',
+     능력:'트리거를 줄여주는 약초(귀에 넣는 것) 등을 만듦. 재료 출처는 안 알려줌.',
+     명대사:'"이름 없어도 존재하는 것들이 있어." (샤울·달레트 관계를 두고)'
+   }, rels:['rom']},
+
+  {id:'serena', cat:'인물', name:'세레나', meta:'정보 브로커', desc:'자기애 넘치는 공주님 컨셉이지만 실력은 진짜. 공간을 장악하는 에너지의 정보 브로커. (프리실라 모티프)',
+   fields:{
+     모티프:'리제로의 프리실라 같은, 자기애 넘치는 공주님 컨셉.',
+     성격:'본인이 세상에서 제일 중요하다고 진심으로 믿음. 허세 같지만 진짜 능력이 있어 아무도 뭐라 못 함. 외모에 극도로 신경 씀(지하에서도 혼자 화려하게 차려입음).',
+     역할:'지하/위/그 사이를 잇는 정보 브로커. 네트워크로 정보를 확인하고 엮음. "이 모든 정보를 엮어 쓸모 있게 만드는 사람."',
+     관찰력:'샤울의 가디건이 세 벌 다 같은 제품임을 솔기 닳은 정도로 간파. 리셋 전조(폐기 물량+빛 깜빡임+시민 동기화)를 즉시 읽어냄.',
+     말투:'샤울을 "은발 아가씨", 달레트를 "담요씨"라 부름. 머리카락 넘기는 동작이 완벽함.'
+   }, rels:[]},
+
+  // ===== 돔 =====
+  {id:'eden', cat:'돔', name:'에덴 (Eden)', meta:'1부 무대 · 표준 돔', desc:'인간의 보편적 삶을 모사하는 가장 표준적인 실험구역. 알파가 관리. 본작의 무대.',
+   fields:{
+     설정:'콜렉티브가 운영하는 디스토피아 돔. 연대·감정·사회 구조 등 인간성 전반을 관측하는 표준 실험구역. 알파가 관리.',
+     특징:'밤이 없다(콜렉티브가 어둠에 약해서). 항상 밝은 도시 → 그림자가 없음. 불은 인덕션·소각장 등으로 존재하나 일상에서 볼 일 거의 없음.',
+     연출원칙:'콜렉티브의 존재는 돔 주민에게 끝까지 알려지지 않아야 한다.'
+   }, rels:['collective','domes']},
+
+  {id:'domes', cat:'돔', name:'7개의 돔', meta:'전체 세계', desc:'에덴, 아르카디아, 아레스, 프로메테우스, 레테, 엘리시움, 크로노스. 각 돔이 인간의 다른 측면을 실험.',
+   fields:{
+     개념:'콜렉티브가 인간의 각 측면을 변수별로 분리해 별도의 돔에서 실험. 인간을 분해해 이해하려는 접근. 이름은 인간 문화 DB에서 매칭 — 의미는 이해 못 하고 상관관계 높은 명칭만 가져옴(아름다운 이름 + 잔인한 내용).',
+     아르카디아:'생식/번식 탐구. 발정 유도된 인간을 가축처럼 사육. 가장 잔인.',
+     아레스:'폭력성 연구. 알파가 태어난 곳. 무력·배신이 만연.',
+     프로메테우스:'신체 변형 탐구. 유전자 조작·신체 개조. 어디까지 바꿔도 인간인가.',
+     레테:'기억·망각 연구. 세뇌 트리거 시제품 테스트.',
+     엘리시움:'쾌락·중독 연구. 만족의 과잉이 인간을 파괴하는 과정 관측.',
+     크로노스:'시간 인지 연구. 시간 감각 왜곡 실험. 라플라스 프로젝트와 가장 직접 연결.',
+     주의:'1부는 에덴만 다룸. 다른 돔은 차기작에서 전개 예정.'
+   }, rels:['eden']},
+
+  // ===== 시스템 =====
+  {id:'collective', cat:'시스템', name:'콜렉티브 (Collective)', meta:'외계 문명', desc:'돔을 운영하는 결정론적 외계 문명. 인간의 불확정성을 정복해 라플라스의 악마가 되려 한다.',
+   fields:{
+     목적:'라플라스의 악마가 되는 것. 인간의 불확정성도 예측 가능하다 확신하며, 양자역학의 불확정성 원리조차 부정. 모든 것에 규칙·패턴이 존재한다고 믿음. — 이 신념이 핵심이자 맹점.',
+     세계관:"생물학적 생존만이 '살아있음'의 정의. 의식·자아·감정은 변수일 뿐. 어둠에 약하다.",
+     데이터관:"감정·허밍 등은 '정크'로 분류해 폐기. (역설: 버리는 게 사실 라플라스 완성에 필요한 핵심 변수일 수 있음)",
+     관계:'돔 주민은 콜렉티브의 존재 자체를 모른다. 알파를 통해 마더트리에 명령을 전달.'
+   }, rels:['eden','motherboard','alpha']},
+
+  {id:'motherboard', cat:'시스템', name:'마더트리', meta:'심해의 생체 연산 장치 (PLC)', desc:'인간 여성을 생체 부품(CPU)으로 쓰는 거대 연산 시스템. 심해에 설치되어 있다. 콜렉티브의 하위 실행 컨트롤러(PLC).',
+   fields:{
+     역할:'PLC(하위 실행 컨트롤러). 콜렉티브의 상위 명령을 받아 돔 내부 동작(빛 제어·합창 타이밍·세뇌 동기화·온도 관리 등)을 실시간 시퀀스로 변환·실행.',
+     부품:'외계 부품 고갈로 연산 모듈을 인간 여성 신경계로 대체. 특정 혈통의 여성을 동기화해 CPU로 사용. 주기적 교체(동화) 필요, 인간 부품도 소모됨. 델마가 이 프로세서로 장착됨.',
+     위치:'심해. (코난 흑철의 어영의 해저 시스템 펜로즈에서 영감)',
+     심해인이유:'① 물고기=무의식 상징 — 잠긴 여성들의 무의식이 곧 물고기. 표면(돔)에선 안 보이는 심해에 진실이 가라앉음. ② 냉각 — 고출력 연산 발열을 바닷물이 식힘(해저 데이터센터 개념). ③ 어둠 — 심해는 빛이 안 닿음. 마더트리는 콜렉티브 본체가 아닌 PLC라 심해에 둘 수 있음.',
+     서사:'후반부 클라이맥스 무대. 마더트리에 닿으려면 돔 밖 + 심해라는 이중 난관. 허밍 속 "이름 부르는 여자"가 이 어딘가에.'
+   }, rels:['collective','delma']},
+
+  {id:'brainwash', cat:'시스템', name:'세뇌 트리거', meta:'통제 메커니즘', desc:'세 가지 축의 동시 노출로 기억을 덮어쓰는 통제 장치. 달레트는 면역.',
+   fields:{
+     세축:'① 언어 리듬(특정 문장 패턴, 3박자 등) ② 특정 향(허브 계열) ③ 시청각 신호(자막·사운드의 반 박 어긋남). 둘 이상 동시 노출 시 강력 발현.',
+     특징:'도시 전체(종교 합창·광고·점멸)에 깔려 있어 도시 자체가 세뇌 장치. 면역자도 구분에 피로를 느낌.'
+   }, rels:['daleth']},
+
+  {id:'reset', cat:'시스템', name:'리셋 (초기화)', meta:'재활용 DNA · 주기적 초기화', desc:'실험 단계 전환을 위해 돔 전체를 초기화. 이전 세대 DNA를 재활용해 새 인류를 채운다.',
+   fields:{
+     설정:'실험 단계 전환·결과 정리를 위해 돔 전체 초기화. 기록/기억이 소거됨. 이전 세대 DNA를 재활용해 새 인류를 채움 — 돔 안 인간들은 과거의 변주이자 이전 세대의 "후손".',
+     전조:'며칠 전부터 미세 이상 — 돔의 빛이 특정 시간 일정 규칙으로 3번 깜빡임. 세뇌자는 깜빡임과 눈 깜빡임이 동기화되어 인식 못 함. 폐기 물량 증가도 동반. 면역자만 감지.',
+     생존자:'롬 영감은 이전 주기의 생존자.'
+   }, rels:['rom']},
+
+  {id:'humming', cat:'시스템', name:'허밍 데이터 / 카트리지', meta:'감정의 잔향', desc:'감정·호명되지 않은 소리 등 "울림" 데이터. 콜렉티브는 정크로 폐기. 손톱만한 투명 카트리지에 담김.',
+   fields:{
+     허밍:'감정·호명되지 않은 소리·향 등 "울림" 데이터. 대부분 감정의 잔향. 드물게 마더트리 안 여성들의 무의식이 잔향으로 섞여 나옴(심해 마더트리와 연결).',
+     카트리지:'손톱만 한 투명 캡슐(유리성 반도체). 재생 시 미세한 빛, 폐기 직전엔 문 모양으로 정렬되는 시각 신호. 폐기 시 수량 관리가 안 돼 훔쳐도/빼돌려도 티가 안 남.',
+     루트:'폐기 중 도난(펠트) → 지하 유통 → 롬 영감 보관/판매 → 필요한 자가 구매(기억 복원·반체제 리추얼 등).',
+     재생:'면역자(달레트)는 소리가 아닌 장면/기억으로 받아들임. 롬의 재생기는 향·체온까지 원형으로 재생.'
+   }, rels:['shaul','rom','motherboard']},
+
+  // ===== 상징 =====
+  {id:'sym_wolf', cat:'상징', name:'늑대 = 풍요', meta:'곡물의 늑대 전승', desc:'유럽 농경 민속의 "곡물의 늑대" 전승. 포식자 이미지 뒤에 풍요의 정령이라는 반전.',
+   fields:{
+     근거:'유럽 농경 민속 "곡물의 늑대(Getreidewolf)". 바람에 밀밭이 물결치면 "늑대가 곡식 사이를 달린다", 추수 마지막 다발에 늑대 정령이 깃든다고 믿음. 늑대=곡물의 생명력=풍요. (늑대와 향신료의 호로가 이 화신)',
+     활용:'돔엔 동물이 거의 없어(신성시되거나 동물원) 동물 하나하나가 큰 상징적 무게. 사람들은 늑대를 책 속 무서운 짐승으로만 앎. 달레트만 풍요의 상징임을 어렴풋이 안다. 돔 밖에서 진짜 늑대를 마주하면 사람들은 공포, 달레트만 "풍요의 정령"으로 알아봄.'
+   }, rels:['daleth']},
+
+  {id:'sym_fish', cat:'상징', name:'물고기 = 무의식', meta:'마더트리와 연결', desc:'물속=의식 아래·무의식·잠재된 진실(융). 심해 마더트리 속 여성들의 의식과 직결.',
+   fields:{설정:'물고기는 물속에 살기에 무의식·잠재된 진실을 상징. 마더트리 속 적합자 여성들의 의식, 허밍 데이터와 직결. 마더트리가 심해에 있다는 설정의 핵심 상징.'}, rels:['motherboard']},
+
+  {id:'sym_crow', cat:'상징', name:'까마귀 = 기억/정보 (보류)', meta:'후긴과 무닌', desc:'오딘의 까마귀 후긴(생각)·무닌(기억)이 정보를 모아 보고. 콜렉티브 정보 수집과 연결. (보류)',
+   fields:{설정:'북유럽 신화 오딘의 까마귀 후긴/무닌. 콜렉티브의 정보 수집과 겹침. 관측 단말을 까마귀 모티프로 만들 여지. 콜렉티브 구체화 시 활용 예정.'}, rels:['collective']},
+
+  // ===== 설정 =====
+  {id:'tone', cat:'설정', name:'작품 톤', meta:'연출 방향', desc:'《프리렌》과 《슈타인즈 게이트》의 결. 조용한 일상 + 광대한 세계관. 액션보다 정보전/진실 추구가 핵심.',
+   fields:{
+     방향:'조용한 일상의 순간과 광대한 세계관이 함께 흐름. 액션이 핵심이 아니라 세뇌를 뚫고 진실을 보는 "정보전"이 핵심.',
+     원칙:'감정을 직접 라벨링하지 않음. 캐릭터 상호작용은 자연스럽게. 알파는 어떤 상황에서도 감정 반응을 보이지 않음(예외 데이터 수집만).',
+     매체:'웹소설 우선 → 팬덤·비주얼 확립 후 만화/비주얼노벨 확장 고려.'
+   }, rels:[]},
+
+  {id:'story', cat:'설정', name:'이야기 진행 구조', meta:'전체 플롯', desc:'돔 일상 → 진실 추리 → 지하 확장 → 에덴 탈출/알파 → 돔 밖 세상 → (미정) 다른 돔 → 심해 마더트리.',
+   fields:{
+     메인플롯:'1. 돔에서의 일상\n2. 진실에 대한 추리\n3. 지하 세계로 확장\n4. 에덴 돔 탈출 / 알파와의 만남\n5. 돔 밖의 세상과의 조우 (달레트 건강 악화 시작)\n6. (미정) 다른 돔으로\n7. (미정) 마더트리를 향한 심해 모험 — 클라이맥스. 선택지: 해방/부분승리/희생',
+     삽입요소:'• 달레트·샤울의 회상(첫 만남: 벤치-물 한 병-이어캡-빈 방, 관계가 쌓인 과정)\n• 알파 오리지널 스토리(돔 아레스 — 델마와 생존하던 시절, 콜렉티브에게 선택받기까지)',
+     공간확장:'집 → 도시 → 지하 → 돔 밖 → 심해. 한 겹씩 벗겨지며 진실에 가까워지는 구조.'
+   }, rels:[]},
+];
+
+let DATA = load();
+let CATS = loadCats();
+let activeCat = 'all';
+let activeView = 'grid';
+let query = '';
+
+function loadCats(){
+  try { const raw=localStorage.getItem(CAT_KEY); if(raw) return JSON.parse(raw); }catch(e){}
+  try { localStorage.setItem(CAT_KEY, JSON.stringify(DEFAULT_CATS)); }catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT_CATS));
+}
+function saveCats(){ try{ localStorage.setItem(CAT_KEY, JSON.stringify(CATS)); }catch(e){} }
+function catColor(name){ const c=CATS.find(x=>x.name===name); return c?c.color:'#6fe3c2'; }
+function nextColor(){
+  const used = CATS.map(c=>c.color);
+  return PALETTE.find(p=>!used.includes(p)) || PALETTE[CATS.length % PALETTE.length];
+}
+function hexA(hex,a){ const n=parseInt(hex.slice(1),16); return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`; }
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e){}
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(SEED)); } catch(e){}
+  return JSON.parse(JSON.stringify(SEED));
+}
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(DATA)); } catch(e){} }
+function byId(id){ return DATA.find(d=>d.id===id); }
+function uid(){ return 'x'+Math.random().toString(36).slice(2,8); }
+
+const grid = document.getElementById('grid');
+const overlay = document.getElementById('overlay');
+const sheetBody = document.getElementById('sheetBody');
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+function renderChips(){
+  const wrap = document.getElementById('filters');
+  let html = `<button class="chip ${activeCat==='all'?'active':''}" data-cat="all">전체</button>`;
+  html += CATS.map(c=>{
+    const on = activeCat===c.name;
+    const style = on ? `background:${c.color};border-color:${c.color};color:var(--bg);` : `border-color:${hexA(c.color,0.5)};color:${c.color};`;
+    return `<button class="chip ${on?'active':''}" data-cat="${esc(c.name)}" style="${style}">${esc(c.name)}</button>`;
+  }).join('');
+  html += `<button class="chip manage-chip" data-manage="1">분류 관리</button>`;
+  wrap.innerHTML = html;
+}
+
+function filtered() {
+  const q = query.trim().toLowerCase();
+  return DATA.filter(d => {
+    if (activeCat !== 'all' && d.cat !== activeCat) return false;
+    if (!q) return true;
+    const blob = (d.name + ' ' + d.meta + ' ' + d.desc + ' ' + Object.values(d.fields||{}).join(' ')).toLowerCase();
+    return blob.includes(q);
+  });
+}
+
+function render() {
+  const items = filtered();
+  if (!items.length) {
+    grid.innerHTML = '<div class="empty"><div class="big">∅</div>일치하는 항목이 없습니다.</div>';
+    return;
+  }
+  grid.innerHTML = items.map(d => {
+    const col = catColor(d.cat);
+    return `
+    <div class="card" data-cat="${esc(d.cat)}" data-id="${d.id}" style="--cat-color:${col}">
+      <div class="card-top">
+        <div class="card-name">${esc(d.name)}</div>
+        <div class="card-tag" style="color:${col};background:${hexA(col,0.12)}">${esc(d.cat)}</div>
+      </div>
+      <div class="card-meta">${esc(d.meta||'')}</div>
+      <div class="card-desc">${esc(d.desc||'')}</div>
+    </div>`;
+  }).join('');
+}
+
+function esc(s){ return (s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function openDetail(id) {
+  const d = byId(id); if(!d) return;
+  const fields = d.fields || {};
+  const fieldHtml = Object.entries(fields).map(([k,v])=>`
+    <div class="detail-field">
+      <div class="detail-label">${esc(k)}</div>
+      <div class="detail-val">${esc(v)}</div>
+    </div>`).join('');
+  const rels = (d.rels||[]).map(byId).filter(Boolean);
+  const relHtml = rels.length ? `
+    <div class="detail-field">
+      <div class="detail-label">관계 / 연결</div>
+      <div class="rel-list">${rels.map(r=>`<span class="rel-pill" data-go="${r.id}">${esc(r.name)}</span>`).join('')}</div>
+    </div>` : '';
+  sheetBody.innerHTML = `
+    <div class="sheet-head">
+      <div>
+        <div class="sheet-name">${esc(d.name)}</div>
+        <div class="sheet-meta">[${d.cat}] ${esc(d.meta||'')}</div>
+      </div>
+      <button class="icon-btn" data-close>✕</button>
+    </div>
+    <div class="detail-field"><div class="detail-label">요약</div><div class="detail-val">${esc(d.desc||'')}</div></div>
+    ${fieldHtml}${relHtml}
+    <div class="btn-row">
+      <button class="btn" data-edit="${d.id}">수정</button>
+      <button class="btn btn-danger" data-del="${d.id}">삭제</button>
+    </div>`;
+  showOverlay();
+}
+
+function openForm(id) {
+  const d = id ? byId(id) : {id:'',cat:'인물',name:'',meta:'',desc:'',fields:{},rels:[]};
+  const extra = Object.entries(d.fields||{});
+  const relOptions = DATA.filter(x=>x.id!==id);
+  sheetBody.innerHTML = `
+    <div class="sheet-head">
+      <div class="sheet-name">${id?'항목 수정':'새 항목'}</div>
+      <button class="icon-btn" data-close>✕</button>
+    </div>
+    <div class="field"><label>이름</label><input id="f-name" value="${esc(d.name)}"></div>
+    <div class="field"><label>분류</label>
+      <select id="f-cat">
+        ${CATS.map(c=>`<option ${c.name===d.cat?'selected':''}>${esc(c.name)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>한 줄 메타 (역할/태그)</label><input id="f-meta" value="${esc(d.meta)}"></div>
+    <div class="field"><label>요약</label><textarea id="f-desc">${esc(d.desc)}</textarea></div>
+
+    <div id="extraFields">
+      ${extra.map(([k,v],i)=>fieldBlock(k,v,i)).join('')}
+    </div>
+    <button class="btn" id="addField" style="margin-bottom:14px;">+ 세부 항목 추가</button>
+    <div class="field"><label>관계 / 연결 (탭하여 토글)</label>
+      <div class="rel-list" id="relPick">
+        ${relOptions.map(r=>`<span class="rel-pill" data-rel="${r.id}" style="${(d.rels||[]).includes(r.id)?'border-color:var(--accent);color:var(--accent);':''}">${esc(r.name)}</span>`).join('')}
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="saveBtn">저장</button>
+      <button class="btn" data-close>취소</button>
+    </div>`;
+
+  showOverlay();
+
+  const editing = id;
+  const selRels = new Set(d.rels||[]);
+
+  document.getElementById('addField').onclick = () => {
+    const wrap = document.getElementById('extraFields');
+    const i = wrap.children.length;
+    wrap.insertAdjacentHTML('beforeend', fieldBlock('', '', i));
+  };
+  document.getElementById('relPick').onclick = (e)=>{
+    const p = e.target.closest('[data-rel]'); if(!p) return;
+    const rid = p.dataset.rel;
+    if(selRels.has(rid)){ selRels.delete(rid); p.style.borderColor=''; p.style.color=''; }
+    else { selRels.add(rid); p.style.borderColor='var(--accent)'; p.style.color='var(--accent)'; }
+  };
+  document.getElementById('saveBtn').onclick = () => {
+    const name = document.getElementById('f-name').value.trim();
+    if(!name){ document.getElementById('f-name').focus(); return; }
+    const fields = {};
+    document.querySelectorAll('#extraFields .fb').forEach(fb=>{
+      const k = fb.querySelector('.fk').value.trim();
+      const v = fb.querySelector('.fv').value.trim();
+      if(k && v) fields[k]=v;
+    });
+    const obj = {
+      id: editing || uid(),
+      cat: document.getElementById('f-cat').value,
+      name, meta: document.getElementById('f-meta').value.trim(),
+      desc: document.getElementById('f-desc').value.trim(),
+      fields, rels:[...selRels]
+    };
+    if(editing){ const idx=DATA.findIndex(x=>x.id===editing); DATA[idx]=obj; }
+    else DATA.push(obj);
+    save(); render(); if(activeView==='graph') drawGraph();
+    openDetail(obj.id);
+    toast('저장됐어요');
+  };
+}
+function fieldBlock(k,v,i){
+  return `<div class="fb" style="border:1px solid var(--line);border-radius:9px;padding:10px;margin-bottom:10px;">
+    <input class="fk" placeholder="항목명 (예: 외형, 연출원칙)" value="${esc(k)}" style="width:100%;padding:8px;background:var(--panel);border:1px solid var(--line);border-radius:7px;color:var(--txt);font-family:'Noto Serif KR';margin-bottom:6px;">
+    <textarea class="fv" placeholder="내용" style="width:100%;padding:8px;background:var(--panel);border:1px solid var(--line);border-radius:7px;color:var(--txt);font-family:'Noto Serif KR';min-height:60px;resize:vertical;">${esc(v)}</textarea>
+  </div>`;
+}
+
+function openCatManager(){
+  const rows = CATS.map((c,i)=>`
+    <div class="fb" style="display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin-bottom:9px;">
+      <span style="width:16px;height:16px;border-radius:50%;background:${c.color};flex:none;box-shadow:0 0 8px ${hexA(c.color,0.6)}"></span>
+      <span style="flex:1;font-size:15px;">${esc(c.name)}</span>
+      <span style="color:var(--dim);font-size:12px;font-family:'Major Mono Display'">${countCat(c.name)}</span>
+      <button class="icon-btn" data-catdel="${esc(c.name)}" style="color:var(--dome)">✕</button>
+    </div>`).join('');
+  sheetBody.innerHTML = `
+    <div class="sheet-head">
+      <div class="sheet-name">분류 관리</div>
+      <button class="icon-btn" data-close>✕</button>
+    </div>
+    <div id="catRows">${rows}</div>
+    <div class="field" style="margin-top:14px;"><label>새 분류 이름</label>
+      <input id="newCat" placeholder="예: 사건, 지명, 용어" autocomplete="off">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="addCatBtn">분류 추가</button>
+      <button class="btn" data-close>닫기</button>
+    </div>
+    <div style="color:var(--dim);font-size:11.5px;margin-top:12px;line-height:1.6;">색상은 추가 시 자동 배정됩니다. 분류를 삭제해도 해당 항목은 사라지지 않고 분류 표시만 비워져요.</div>`;
+  showOverlay();
+  document.getElementById('addCatBtn').onclick = ()=>{
+    const v = document.getElementById('newCat').value.trim();
+    if(!v) return;
+    if(CATS.some(c=>c.name===v)){ alert('이미 있는 분류예요.'); return; }
+    CATS.push({name:v, color:nextColor()});
+    saveCats(); renderChips(); openCatManager();
+  };
+}
+function countCat(name){ return DATA.filter(d=>d.cat===name).length; }
+
+// ===== 데이터 내보내기 / 불러오기 =====
+function openDataTools(){
+  sheetBody.innerHTML = `
+    <div class="sheet-head">
+      <div class="sheet-name">데이터 관리</div>
+      <button class="icon-btn" data-close>✕</button>
+    </div>
+    <div class="info-box">
+      현재 <b>${DATA.length}개 항목</b> / <b>${CATS.length}개 분류</b>가 저장돼 있어요.<br><br>
+      이 앱의 데이터는 이 기기·브라우저에 자동 저장돼요. 기기를 바꾸거나 백업하려면 <b>내보내기</b>로 파일을 저장하세요. 그 파일을 다시 <b>불러오기</b> 하면 어디서든 복원됩니다.
+    </div>
+    <div class="field"><label>백업 / 백업 복원</label></div>
+    <div class="btn-row" style="margin-bottom:10px;">
+      <button class="btn btn-primary" id="exportBtn">⬇ 내보내기 (파일 저장)</button>
+    </div>
+    <div class="btn-row" style="margin-bottom:18px;">
+      <button class="btn" id="importBtn">⬆ 불러오기 (파일 선택)</button>
+      <button class="btn" id="copyBtn">⧉ 클립보드 복사</button>
+    </div>
+    <div class="field"><label>붙여넣기로 불러오기 (JSON 텍스트)</label>
+      <textarea id="pasteArea" placeholder="여기에 JSON을 붙여넣고 아래 버튼을 누르세요" style="min-height:90px;"></textarea>
+    </div>
+    <div class="btn-row" style="margin-bottom:18px;">
+      <button class="btn btn-primary" id="pasteImportBtn">붙여넣은 내용 불러오기</button>
+    </div>
+    <div class="info-box" style="border-color:rgba(227,111,156,.3);">
+      <b style="color:var(--dome)">초기화</b> — 모든 항목을 기본 시드 상태로 되돌려요. (백업해두지 않으면 추가/수정한 내용이 사라집니다)
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-danger" id="resetBtn">기본값으로 초기화</button>
+    </div>`;
+  showOverlay();
+
+  document.getElementById('exportBtn').onclick = exportData;
+  document.getElementById('importBtn').onclick = ()=>document.getElementById('importFile').click();
+  document.getElementById('copyBtn').onclick = copyData;
+  document.getElementById('pasteImportBtn').onclick = ()=>{
+    const txt = document.getElementById('pasteArea').value.trim();
+    if(!txt){ toast('붙여넣은 내용이 없어요'); return; }
+    importFromText(txt);
+  };
+  document.getElementById('resetBtn').onclick = ()=>{
+    if(confirm('정말 기본값으로 초기화할까요? 추가/수정한 내용이 모두 사라집니다.')){
+      DATA = JSON.parse(JSON.stringify(SEED));
+      CATS = JSON.parse(JSON.stringify(DEFAULT_CATS));
+      save(); saveCats(); renderChips(); render();
+      if(activeView==='graph') drawGraph();
+      closeOverlay(); toast('초기화됐어요');
+    }
+  };
+}
+
+function exportPayload(){
+  return JSON.stringify({ _type:'laplace_archive', _ver:2, exported:new Date().toISOString(), cats:CATS, data:DATA }, null, 2);
+}
+function exportData(){
+  const blob = new Blob([exportPayload()], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,16).replace(/[:T]/g,'-');
+  a.href = url; a.download = `laplace-archive-${stamp}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  toast('파일을 저장했어요');
+}
+async function copyData(){
+  try { await navigator.clipboard.writeText(exportPayload()); toast('클립보드에 복사됐어요'); }
+  catch(e){ toast('복사 실패 — 내보내기를 써주세요'); }
+}
+function importFromText(txt){
+  let obj;
+  try { obj = JSON.parse(txt); } catch(e){ toast('JSON 형식이 아니에요'); return; }
+  let newData, newCats;
+  if (Array.isArray(obj)) { newData = obj; }
+  else if (obj && obj.data) { newData = obj.data; newCats = obj.cats; }
+  else { toast('알 수 없는 형식이에요'); return; }
+  if(!Array.isArray(newData)){ toast('데이터를 찾을 수 없어요'); return; }
+  if(!confirm(`${newData.length}개 항목을 불러올까요? 현재 내용을 덮어씁니다.`)) return;
+  DATA = newData;
+  if(Array.isArray(newCats) && newCats.length) CATS = newCats;
+  save(); saveCats(); renderChips(); render();
+  if(activeView==='graph') drawGraph();
+  closeOverlay(); toast('불러오기 완료');
+}
+document.getElementById('importFile').addEventListener('change', (e)=>{
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{ importFromText(r.result); e.target.value=''; };
+  r.readAsText(f);
+});
+
+function showOverlay(){ overlay.classList.add('show'); document.body.style.overflow='hidden'; }
+function closeOverlay(){ overlay.classList.remove('show'); document.body.style.overflow=''; }
+
+// Graph
+function drawGraph(){
+  const svg = document.getElementById('graph');
+  const nodes = DATA.slice();
+  const N = nodes.length;
+  const cx=180, cy=180, R=135;
+  const pos = {};
+  nodes.forEach((d,i)=>{
+    const a = (i/N)*Math.PI*2 - Math.PI/2;
+    pos[d.id] = {x: cx + R*Math.cos(a), y: cy + R*Math.sin(a)};
+  });
+  const colorOf = (cat)=>catColor(cat);
+  let lines='', dots='';
+  const drawn = new Set();
+  nodes.forEach(d=>{
+    (d.rels||[]).forEach(rid=>{
+      if(!pos[rid]) return;
+      const key=[d.id,rid].sort().join('|');
+      if(drawn.has(key)) return; drawn.add(key);
+      const a=pos[d.id], b=pos[rid];
+      lines+=`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#2a3340" stroke-width="1"/>`;
+    });
+  });
+  nodes.forEach(d=>{
+    const p=pos[d.id]; const c=colorOf(d.cat);
+    dots+=`<g data-id="${d.id}" style="cursor:pointer">
+      <circle cx="${p.x}" cy="${p.y}" r="6" fill="${c}" />
+      <circle cx="${p.x}" cy="${p.y}" r="11" fill="${c}" opacity="0.12"/>
+      <text class="node-label" x="${p.x}" y="${p.y + (p.y<cy? -13:20)}" text-anchor="middle">${esc(d.name)}</text>
+    </g>`;
+  });
+  svg.innerHTML = lines + dots;
+  svg.querySelectorAll('g[data-id]').forEach(g=>{
+    g.addEventListener('click', ()=>openDetail(g.dataset.id));
+  });
+}
+
+// Events
+document.getElementById('search').addEventListener('input', e=>{ query=e.target.value; render(); });
+document.getElementById('filters').addEventListener('click', e=>{
+  if(e.target.closest('[data-manage]')) return openCatManager();
+  const c = e.target.closest('.chip'); if(!c) return;
+  activeCat = c.dataset.cat; renderChips(); render();
+});
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active'); activeView=t.dataset.view;
+  document.getElementById('gridWrap').classList.toggle('hide', activeView==='graph');
+  document.getElementById('graphWrap').classList.toggle('show', activeView==='graph');
+  if(activeView==='graph') drawGraph();
+}));
+grid.addEventListener('click', e=>{ const c=e.target.closest('.card'); if(c) openDetail(c.dataset.id); });
+document.getElementById('addBtn').addEventListener('click', ()=>openForm(null));
+document.getElementById('toolsBtn').addEventListener('click', openDataTools);
+overlay.addEventListener('click', e=>{
+  if(e.target===overlay) return closeOverlay();
+  if(e.target.closest('[data-close]')) return closeOverlay();
+  const go=e.target.closest('[data-go]'); if(go) return openDetail(go.dataset.go);
+  const ed=e.target.closest('[data-edit]'); if(ed) return openForm(ed.dataset.edit);
+  const catdel=e.target.closest('[data-catdel]');
+  if(catdel){
+    const name=catdel.dataset.catdel;
+    if(confirm(`'${name}' 분류를 삭제할까요? 해당 항목들의 분류 표시만 비워집니다.`)){
+      CATS=CATS.filter(c=>c.name!==name);
+      if(activeCat===name) activeCat='all';
+      saveCats(); renderChips(); render(); openCatManager();
+    }
+    return;
+  }
+  const del=e.target.closest('[data-del]');
+  if(del){
+    if(confirm('이 항목을 삭제할까요? (되돌릴 수 없습니다)')){
+      DATA=DATA.filter(x=>x.id!==del.dataset.del);
+      DATA.forEach(x=>{ if(x.rels) x.rels=x.rels.filter(r=>r!==del.dataset.del); });
+      save(); render(); if(activeView==='graph') drawGraph(); closeOverlay();
+      toast('삭제됐어요');
+    }
+  }
+});
+
+renderChips();
+render();
+</script>
+</body>
+</html>
